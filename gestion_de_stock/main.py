@@ -6,10 +6,12 @@ window.geometry("800x800")
 
 crud = CRUD()
 categories = crud.readCategories()
+category_names = [cat[1] for cat in categories]
 display_page = False
 
 # Fenêtre d'ajout d'un produit
 def add_product():
+    global category_names
     add_window = tk.Toplevel(window)
     add_window.geometry("400x400")
     add_window.title("Ajouter un produit")
@@ -37,7 +39,7 @@ def add_product():
     label_category = tk.Label(add_window, text="Catégorie :")
     label_category.pack()
     category_var = tk.StringVar()
-    category_dropdown = ttk.Combobox(add_window, textvariable=category_var, values=categories)
+    category_dropdown = ttk.Combobox(add_window, textvariable=category_var, values=category_names)
     category_dropdown.pack()
     category_dropdown.config(state="readonly")
 
@@ -46,18 +48,17 @@ def add_product():
 
 # Sauvegarde le produit
 def save_product(name, description, price, quantity, category, add_window):
-    if category == "Chaussures":
-        id_category = 1
-    elif category == "Vêtements":
-        id_category = 2
-    elif category == "Accessoires":
-        id_category = 3
+    for i in categories:
+        if i[1] == category:
+            id_category = i[0]
+            
     crud.createProduct(name, description, price, quantity, id_category)
     add_window.destroy() 
     home()  
 
 # Fenêtre de modification de produit
 def modify_product(product):
+    global category_names
     add_window = tk.Toplevel(window)
     add_window.geometry("400x400")
     add_window.title("Modifier un produit")
@@ -89,7 +90,7 @@ def modify_product(product):
     label_category = tk.Label(add_window, text="Catégorie :")
     label_category.pack()
     category_var = tk.StringVar()
-    category_dropdown = ttk.Combobox(add_window, textvariable=category_var, values=categories)
+    category_dropdown = ttk.Combobox(add_window, textvariable=category_var, values=category_names)
     category_dropdown.pack()
     category_dropdown.insert(0, product[5])
     category_dropdown.config(state="readonly")
@@ -98,12 +99,9 @@ def modify_product(product):
 
 # Met à jour le produit modifié
 def update_product(name, description, price, quantity, category,  id_product, add_window):
-    if category == "Chaussures":
-        id_category = 1
-    elif category == "Vêtements":
-        id_category = 2
-    elif category == "Accessoires":
-        id_category = 3
+    for i in categories:
+        if i[1] == category:
+            id_category = i[0]
     crud.updateProduct(name, description, price, quantity, id_category, id_product)
     add_window.destroy()
     home() 
@@ -113,8 +111,58 @@ def delete_product(id):
     crud.deleteProduct(id)
     home()
 
+# Fenêtre d'ajout d'une categorie
+def add_category():
+    add_window = tk.Toplevel(window)
+    add_window.geometry("400x400")
+    add_window.title("Ajouter une catégorie")
+
+    label_name = tk.Label(add_window, text="Nom :")
+    label_name.pack()
+    entry_name = tk.Entry(add_window)
+    entry_name.pack()
+
+    button_save = tk.Button(add_window, text="Enregistrer", bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=lambda: save_category(entry_name.get(), add_window))
+    button_save.pack(pady=20)
+
+# Sauvegarde la categorie
+def save_category(name, add_window):
+    print(name)
+    crud.createCategory(name)
+    add_window.destroy() 
+    home()  
+
+# Fenêtre de modification de la categorie
+def modify_category(category):
+    add_window = tk.Toplevel(window)
+    add_window.geometry("400x400")
+    add_window.title("Ajouter une catégorie")
+
+    label_name = tk.Label(add_window, text="Nom :")
+    label_name.pack()
+    entry_name = tk.Entry(add_window)
+    entry_name.insert(0, category[1])
+
+    entry_name.pack()
+
+    button_save = tk.Button(add_window, text="Enregistrer", bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=lambda: update_category(entry_name.get(), category[0], add_window))
+    button_save.pack(pady=20)
+
+# Met à jour la catégorie
+def update_category(name, id, add_window):
+    crud.updateCategory(name, id)
+    add_window.destroy()
+    home() 
+
+# Suppression de la catégorie
+def delete_category(category):
+    crud.deleteCategory(category[0])
+    home()
+
 # Fenêtre principal
 def home():
+    categories = crud.readCategories()
+
     # destroy previous content in main_frame
     for widget in window.winfo_children():
         widget.destroy()
@@ -137,13 +185,29 @@ def home():
     title = tk.Label(main_frame, text="Nos produits", font=("Arial", 20), justify="left")
     title.pack(padx=20, pady=10, anchor="w")
 
-    button_add_products = tk.Button(main_frame, text="Ajouter un produit", font=("Arial", 13), bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=add_product)
-    button_add_products.pack(padx=20, pady=10, anchor="w")
+    button_frame = tk.Frame(main_frame)
+    button_frame.pack(padx=20, pady=10, anchor="w")
 
-    for categorie in categories:
-        title_products = tk.Label(main_frame, text = categorie, font=("Arial", 15))
-        title_products.pack(padx=20, pady=10, anchor="w")
-        products = crud.readProductsByCategory(categorie)
+    button_add_products = tk.Button(button_frame, text="Ajouter un produit", font=("Arial", 13), bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=add_product)
+    button_add_products.pack(side="left", padx=(0, 10))
+
+    button_add_category_names = tk.Button(button_frame, text="Ajouter une catégorie", font=("Arial", 13), bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=add_category)
+    button_add_category_names.pack(side="left", padx=10)
+
+    for category in categories:
+        category_frame = tk.Frame(main_frame)
+        category_frame.pack(padx=20, pady=10, anchor="w")
+
+        title_products = tk.Label(category_frame, text=category[1], font=("Arial", 15))
+        title_products.pack(side="left")
+
+        button_modify_category = tk.Button(category_frame, text="Modifier", bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=lambda c=category: modify_category(c))
+        button_modify_category.pack(side="left", padx=10)
+
+        button_delete_category = tk.Button(category_frame, text="Supprimer", bg="gray", fg="white", padx=5, pady=5, bd=0, activebackground="light gray",  command=lambda c=category: delete_category(c))
+        button_delete_category.pack(side="left", padx=10)
+
+        products = crud.readProductsByCategory(category[1])
         for product in products:
             product_frame = tk.Frame(main_frame)
             product_frame.pack(fill="x", padx=20, pady=10)
@@ -154,17 +218,17 @@ def home():
             description_label = tk.Label(product_frame, text=product[2], font=("Arial", 12), width=18, anchor="w")
             description_label.pack(side="left")
 
-            price_label = tk.Label(product_frame, text=str(product[3]) + "€", font=("Arial", 12), width=5, anchor="e")
+            price_label = tk.Label(product_frame, text=str(product[3]) + "€", font=("Arial", 12), width=8, anchor="e")
             price_label.pack(side="left")
 
-            quantity_label = tk.Label(product_frame, text=str(product[4]), font=("Arial", 12), width=5)
+            quantity_label = tk.Label(product_frame, text=str(product[4]), font=("Arial", 12), width=8)
             quantity_label.pack(side="left", anchor="e")
 
             button_modify = tk.Button(product_frame, text="Modifier", bg="blue", fg="white", padx=5, pady=5, bd=0, activebackground="light gray",  command=lambda p=product: modify_product(p))
-            button_modify.pack(side="right", padx=10)
+            button_modify.pack(side="left", padx=10)
 
             button_delete = tk.Button(product_frame, text="Supprimer", bg="red", fg="white", padx=5, pady=5, bd=0, activebackground="light gray", command=lambda p=product: delete_product(p[0]))
-            button_delete.pack(side="right", padx=10)
+            button_delete.pack(side="left", padx=10)
 
     canvas.update_idletasks()
     canvas.configure(scrollregion=canvas.bbox('all'))
